@@ -11,6 +11,8 @@
 
 A Java-based simulation of a 2D artificial bacterium ecosystem. The application renders a large world, supports camera navigation, and simulates bacteria that move, consume nutrients, reproduce, and eventually die when their energy runs out.
 
+![Demostración del proyecto](assets/bacteria.gif)
+
 ## Description
 
 This project is a foundation for exploring:
