@@ -8,7 +8,7 @@ public class Bacterium {
     private double x;
     private double y;
 
-    private final double radius;
+    private double radius;
     private final double speed;
 
     private double angle;
@@ -23,16 +23,20 @@ public class Bacterium {
     private static final double REPRODUCTION_COST = 40.0;
     private static final double CHILD_INITIAL_ENERGY = 40.0;
 
-    public Bacterium(double x, double y, double radius) {
-        this(x, y, radius, 50.0);
-    }
+    private static final double GROWTH_ENERGY_THRESHOLD = 60.0;
+    private static final double MAX_RADIUS = 28.0;
+    private static final double GROWTH_RATE = 0.50;
+    private static final double GROWTH_ENERGY_COST = 5.0;
 
-    public Bacterium(
-            double x,
-            double y,
-            double radius,
-            double initialEnergy
-    ) {
+    private double decompositionTime = 0.0;
+    private static final double DECOMPOSITION_DURATION = 16.0;
+    private static final double DECOMPOSITION_RATE = 1.0;
+
+    private double nutrientReleaseAccumulator = 0.0;
+    private static final double NUTRIENT_RELEASE_INTERVAL = 1.5;
+
+
+    public Bacterium(double x, double y, double radius, double initialEnergy) {
         this.x = x;
         this.y = y;
         this.radius = radius;
@@ -42,12 +46,9 @@ public class Bacterium {
         this.angle = ThreadLocalRandom.current().nextDouble(0, Math.PI * 2);
     }
 
-    public void consumeNutrient(double energyAmount) {
-        if (!alive || energyAmount <= 0) {
-            return;
-        }
-
-        energy = Math.min(100.0, energy + energyAmount);
+    // Este contructor usa los parametros del constructor principal, pero con energia inicial de 80.0
+    public Bacterium(double x, double y, double radius) {
+        this(x, y, radius, 80.0);
     }
 
     public void update(
@@ -71,6 +72,8 @@ public class Bacterium {
             alive = false;
             return;
         }
+
+        growGradually(deltaTime);
 
         // Movimiento aleatorio persistente.
         Nutrient target = findNearestNutrient(
@@ -174,9 +177,18 @@ public class Bacterium {
         }
     }
 
-    private Nutrient findNearestNutrient(
-            List<Nutrient> nutrients
-    ) {
+
+    // Consume nutrientes y aumenta la energía de la bacteria.
+    public void consumeNutrient(double energyAmount) {
+        if (!alive || energyAmount <= 0) {
+            return;
+        }
+
+        energy = Math.min(100.0, energy + energyAmount);
+    }
+
+    // Encuentra el nutriente más cercano dentro del radio de percepción.
+    private Nutrient findNearestNutrient(List<Nutrient> nutrients) {
         Nutrient nearest = null;
 
         double perceptionRadius = 120.0;
@@ -198,10 +210,8 @@ public class Bacterium {
         return nearest;
     }
 
-
-    private double calculateSeparationAngle(
-            List<Bacterium> bacteria
-    ) {
+    // Calcula el ángulo de separación para evitar colisiones con otras bacterias.
+    private double calculateSeparationAngle(List<Bacterium> bacteria) {
         double separationX = 0.0;
         double separationY = 0.0;
 
@@ -238,9 +248,8 @@ public class Bacterium {
         return Math.atan2(separationY, separationX);
     }
 
-
     public boolean canReproduce() {
-        return alive && energy >= REPRODUCTION_THRESHOLD;
+        return alive && energy >= REPRODUCTION_THRESHOLD && radius == MAX_RADIUS;
     }
 
     public boolean reproduce() {
@@ -251,6 +260,62 @@ public class Bacterium {
         energy -= REPRODUCTION_COST;
         return true;
     }
+
+    // Crecimiento gradual basado en la energía disponible y el tiempo transcurrido.
+    private void growGradually(double deltaTime) {
+        if (energy <= GROWTH_ENERGY_THRESHOLD || radius >= MAX_RADIUS) {
+            return;
+        }
+
+        // Crecimiento gradual basado en el tiempo y la energía disponible.
+        double growthAmount = Math.min(
+                GROWTH_RATE * deltaTime,
+                MAX_RADIUS - radius
+        );
+
+        double energyCost = growthAmount * GROWTH_ENERGY_COST;
+
+        // No crecer si no hay energía suficiente para pagarlo.
+        if (energy < energyCost) {
+            return;
+        }
+
+        radius += growthAmount;
+        energy -= energyCost;
+    }
+
+    // Divide la biomasa de la bacteria, reduciendo su radio a la mitad.
+    public void divideBiomass() {
+        radius = radius / Math.sqrt(2.0);
+    }
+
+    // Actualiza el tiempo de descomposición y reduce el radio de la bacteria si está muerta.
+    public int updateDecomposition(double deltaTime) {
+        if (alive || deltaTime <= 0) {
+            return 0;
+        }
+
+        decompositionTime += deltaTime;
+
+        radius = Math.max(0.0, radius - DECOMPOSITION_RATE * deltaTime);
+
+        nutrientReleaseAccumulator += deltaTime;
+
+        int nutrientsReleased = (int) (nutrientReleaseAccumulator / NUTRIENT_RELEASE_INTERVAL);
+
+        nutrientReleaseAccumulator -= nutrientsReleased * NUTRIENT_RELEASE_INTERVAL;
+
+        return nutrientsReleased;
+    }
+
+    public boolean isDecomposed() {
+        return !alive && decompositionTime >= DECOMPOSITION_DURATION;
+    }
+
+
+
+
+
 
     public double getX() {
         return x;
@@ -270,6 +335,14 @@ public class Bacterium {
 
     public boolean isAlive() {
         return alive;
+    }
+
+    public double getBaseMetabolism() {
+        return baseMetabolism;
+    }
+
+    public double getSpeed() {
+        return speed;
     }
 
     public static double getChildInitialEnergy() {

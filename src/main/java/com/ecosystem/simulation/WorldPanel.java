@@ -150,7 +150,8 @@ public class WorldPanel extends JPanel {
             camera.applyTransform(g2);
 
             // Dibujar el fondo del mundo.
-            g2.setColor(new Color(238, 242, 232));
+            //g2.setColor(new Color(238, 242, 232));
+            g2.setColor(new Color(212, 251, 255));
             g2.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
             // Dibujar la cuadrícula del mundo.
@@ -260,15 +261,19 @@ public class WorldPanel extends JPanel {
         }
     }
 
-    private void drawBacterium(
-            Graphics2D g2,
-            Bacterium bacterium
-    ) {
+    private void drawBacterium(Graphics2D g2, Bacterium bacterium) {
         double x = bacterium.getX();
         double y = bacterium.getY();
         double radius = bacterium.getRadius();
 
-        g2.setColor(new Color(68, 166, 91));
+
+        if (bacterium.isAlive()) {
+            //g2.setColor(new Color(68, 166, 91));
+            g2.setColor(new Color(210, 237, 38));
+        } else {
+            g2.setColor(Color.GRAY);
+        }
+
 
         g2.fillOval(
                 (int) (x - radius),
@@ -324,7 +329,7 @@ public class WorldPanel extends JPanel {
             int panelX = 20;
             int panelY = 20;
             int panelWidth = 240;
-            int panelHeight = 145;
+            int panelHeight = 195;
 
             // Fondo del panel.
             infoG.setColor(new Color(20, 24, 30, 230));
@@ -362,10 +367,26 @@ public class WorldPanel extends JPanel {
 
             infoG.drawString(
                     String.format(
+                            "Metabolismo: %.2f",
+                            selectedBacterium.getBaseMetabolism()
+                    ),
+                    panelX + 12, panelY + 72
+            );
+
+            infoG.drawString(
+                    String.format(
+                            "Velocidad: %.1f",
+                            selectedBacterium.getSpeed()
+                    ),
+                    panelX + 12, panelY + 94
+            );
+
+            infoG.drawString(
+                    String.format(
                             "Posicion X: %.1f",
                             selectedBacterium.getX()
                     ),
-                    panelX + 12, panelY + 72
+                    panelX + 12, panelY + 116
             );
 
             infoG.drawString(
@@ -373,7 +394,7 @@ public class WorldPanel extends JPanel {
                             "Posicion Y: %.1f",
                             selectedBacterium.getY()
                     ),
-                    panelX + 12, panelY + 94
+                    panelX + 12, panelY + 138
             );
 
             infoG.drawString(
@@ -381,7 +402,7 @@ public class WorldPanel extends JPanel {
                             "Radio: %.1f",
                             selectedBacterium.getRadius()
                     ),
-                    panelX + 12, panelY + 116
+                    panelX + 12, panelY + 160
             );
 
             infoG.setColor(
@@ -392,7 +413,7 @@ public class WorldPanel extends JPanel {
 
             infoG.drawString(
                     selectedBacterium.isAlive() ? "Estado: Viva" : "Estado: Muerta",
-                    panelX + 12, panelY + 136
+                    panelX + 12, panelY + 182
             );
 
         } finally {

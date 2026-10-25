@@ -10,34 +10,25 @@ import java.util.List;
 
 public class BacteriaManager {
 
-    private static final int INITIAL_POPULATION = 1;
+    private static final int INITIAL_POPULATION = 2;
 
     private final List<Bacterium> bacteria = new ArrayList<>();
 
     // Vista de solo lectura de la población.
     private final List<Bacterium> bacteriaView = Collections.unmodifiableList(bacteria);
 
-    public BacteriaManager(
-            double worldWidth,
-            double worldHeight
-    ) {
+    public BacteriaManager(double worldWidth, double worldHeight) {
         ThreadLocalRandom random = ThreadLocalRandom.current();
 
         for (int i = 0; i < INITIAL_POPULATION; i++) {
 
-            double radius = random.nextDouble(8, 16);
+            double radius = random.nextDouble(8, 16); // 🔨
 
-            double x = random.nextDouble(
-                    radius,
-                    worldWidth - radius
-            );
+            double x = random.nextDouble(radius, worldWidth - radius);
 
-            double y = random.nextDouble(
-                    radius,
-                    worldHeight - radius
-            );
+            double y = random.nextDouble(radius, worldHeight - radius);
 
-            bacteria.add(new Bacterium(x, y, radius));
+            bacteria.add(new Bacterium(x, y, radius)); // 🚩
         }
     }
 
@@ -78,15 +69,32 @@ public class BacteriaManager {
         // 3. Reproducción.
         reproduceBacteria(worldWidth, worldHeight);
 
-        // 4. Eliminar bacterias muertas.
+        // 4. Descomposición, liberación de nutrientes y eliminación.
         Iterator<Bacterium> iterator = bacteria.iterator();
 
         while (iterator.hasNext()) {
-            if (!iterator.next().isAlive()) {
-                iterator.remove();
+            Bacterium bacterium = iterator.next();
+
+            if (!bacterium.isAlive()) {
+                int nutrientsReleased = bacterium.updateDecomposition(deltaTime);
+
+                for (int i = 0; i < nutrientsReleased; i++) {
+                    double dist = Math.sqrt(ThreadLocalRandom.current().nextDouble()) * bacterium.getRadius();
+                    double angle = ThreadLocalRandom.current().nextDouble(0, Math.PI * 2);
+                    nutrientManager.addNutrient(
+                            bacterium.getX() + Math.cos(angle) * dist,
+                            bacterium.getY() + Math.sin(angle) * dist,
+                            21.0 // 🪫
+                    );
+                }
+
+                if (bacterium.isDecomposed()) {
+                    iterator.remove();
+                }
             }
         }
     }
+
 
     private void reproduceBacteria(double worldWidth, double worldHeight) {
         List<Bacterium> newborns = new ArrayList<>();
@@ -97,33 +105,42 @@ public class BacteriaManager {
                 continue;
             }
 
+            // Guardar el tamaño original antes de la división.
+            double originalRadius = mother.getRadius();
+
             if (!mother.reproduce()) {
                 continue;
             }
 
-            double radius = random.nextDouble(8, 16);
-            //double radius = mother.getRadius() - z;
+            // Dividir la biomasa entre madre e hija.
+            mother.divideBiomass();
+
+            double childRadius = originalRadius / Math.sqrt(2.0);
 
             // Dirección aleatoria para colocar a la hija.
             double angle = random.nextDouble(0, Math.PI * 2);
+            double randomDistance = random.nextDouble(4, 6);
 
-            double distance = mother.getRadius() + radius + 2;
+            double distance = mother.getRadius() + childRadius + randomDistance;
 
-            double x = mother.getX()
-                    + Math.cos(angle) * distance;
-
-            double y = mother.getY()
-                    + Math.sin(angle) * distance;
+            double x = mother.getX() + Math.cos(angle) * distance;
+            double y = mother.getY() + Math.sin(angle) * distance;
 
             // Mantener a la hija dentro del mundo.
-            x = Math.max(radius, Math.min(x, worldWidth - radius));
-            y = Math.max(radius, Math.min(y, worldHeight - radius));
+            x = Math.max(childRadius,
+                    Math.min(x, worldWidth - childRadius));
 
-            newborns.add(new Bacterium(x, y, radius, 40.0));
+            y = Math.max(childRadius,
+                    Math.min(y, worldHeight - childRadius));
+
+            newborns.add(new Bacterium(x, y, childRadius, 40.0));
         }
 
         bacteria.addAll(newborns);
     }
+
+
+
 
     public List<Bacterium> getBacteria() {
         return bacteriaView;
