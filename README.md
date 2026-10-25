@@ -1,4 +1,4 @@
-# Bacteria — Artificial Ecosystem 2D
+# Bacterium — Artificial Ecosystem 2D
 
 <p align="center">
   <a href="https://translate.google.com/translate?sl=en&tl=es&u=https://github.com/OWNER/REPO" target="_blank" rel="noopener noreferrer">
